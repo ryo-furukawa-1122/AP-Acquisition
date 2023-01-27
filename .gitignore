@@ -1,2 +1,5 @@
 # production
 /data
+
+# file
+*.csv
