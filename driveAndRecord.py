@@ -1,114 +1,107 @@
 import pyvisa
 import time
 import numpy as np
-import nidaqmx as ni
 import matplotlib.pyplot as plt
+import sys
 import csv
 
-# input = ['Dev4/ai0']
-# output = ['Dev4/ao0']
+# Connection to instruments
+try:
+    rm = pyvisa.ResourceManager()
+    # resource_list = rm.list_resources()
+    func = rm.open_resource('USB0::-adress of multifunction generator-')
+    osci = rm.open_resource('USB0::0xF4EC::0xEE38::SDSMMEBQ4R4674::INSTR')
+except:
+    print('Failed to connect to instruments...')
+    sys.exit(0)
 
-# def record(
-#     outdata,
-#     fs = 2 *1e6,
-#     input_mapping=input,
-#     output_mapping=output
-# ):
-#     nsamples = outdata.shape[0]
-#     with ni.Task() as read_task, ni.Task() as write_task:
-#         for o in output_mapping:
-#             print(o)
-#             aochan = write_task.ao_channels.add_ao_voltage_chan(o)
-#             aochan.ao_max = 3.5   # output range of USB-4431
-#             aochan.ao_min = -3.5
+def record(ch):
+    fs = osci.query('SARA?')
+    fs = fs[len('SARA '):-5]
+    fs = float(fs)
 
-#         for i in input_mapping:
-#             print(i)
-#             aichan = read_task.ai_channels.add_ai_voltage_chan(i)
-#             aichan.ai_min = -10
-#             aichan.ai_max = 10
+    vd = osci.query(f'C{ch}:VDIV?')
+    vd = vd[len(f'C{ch}:VDIV '):-2]
+    vd = float(vd)
 
-#         for task in (read_task, write_task):
-#             task.timing.cfg_samp_clk_timing(rate=fs, source='OnboardClock', samps_per_chan=nsamples)
-        
-#         write_task.triggers.start_trigger.cfg_dig_edge_start_trig(read_task.triggers.start_trigger.term)
-#         write_task.write(outdata, auto_start=False)
-#         write_task.start()
-#         indata = read_task.read(nsamples)
-        
-#     return indata
+    voff = osci.query(f'C{ch}:OFST?')
+    voff = voff[len(f'C{ch}:OFST '):-2]
+    voff = float(voff)
 
-rm = pyvisa.ResourceManager()
-resource_list = rm.list_resources()
-func = rm.open_resource(resource_list[1])
+    osci.write(':STOP')
+    osci.write('WFSU SP, 1, NP, 0, FP, 0')
+    osci.write(f'C{ch}:WF? DAT2')
+    osci.chunk_size = 1024**3
 
-func.write(":SOURce1:TRIGger[1]:BURst:SLOPe")
+    wave = osci.query_binary_values(f'C{ch}:WF? DAT2', datatype='b', is_big_endian=True)
 
-frequencies = np.arange(200, 900, 20)  #in kHz
-voltage_amp = 2  #AC 10 V
+    wave = list(map(float, wave))
+    wave = np.array(wave)
+    v = wave * (vd / 25) - voff  # in V
+
+    x = np.arange(0, len(wave), 1)
+    t = x/fs  # in s
+
+    return np._[t, v]
+
+func.write(":SOURce1:BURst:STATe ON")  # Set at burst mode
+
+frequencies = np.arange(200, 900, 20)  # in kHz
+voltage_amp = 2  # AC 10 V
 
 func.write(f":SOURce1:VOLTage:LEVelIMMediate:AMPLitude {voltage_amp} VPP")
 
-# sr = 500 * 1e3
-# duration = 100 * 1e-3
-# samples = int(sr * duration)
-
-# trig_timing = 50 * 1e-3
-# trig_duration = 5 * 1e-3
-# trig_voltage = 3
-# trig_rise = int(sr * trig_timing)
-# trig_fall = int(sr * (trig_timing + trig_duration))
-
-# t = np.linspace(0, duration, samples, endpoint=False)
-# sig = np.zeros(samples)
-# sig[trig_rise:trig_fall] = trig_voltage
-
 all_data = {int(f): [] for f in frequencies}
+p_voltage = {int(f): [] for f in frequencies}
 
+ch = 2  # Channel of the oscilloscope
 trials = 1
-p_voltage = {}
+for frequency in frequencies:
+    all_data[frequency] = {int(trial): [] for trial in trials}
+
 for frequency in frequencies:
     print(f"Setting frequency to {frequency}")
     func.write(f":SOURce1:FREQuency:FIXed {frequency}k")
 
-    for trial in range(trials):
-        func.write(":OUTPut1:STATe ON")
+    for trial in trials:
+        func.write(":OUTPut1:*TRG")
+        func.write(':OUTPut1:STATe ')
         trial_data = {}
 
-        # indata = record(
-        #     sig,
-        #     fs = 20 * 1e6,
-        #     input_mapping=input,
-        #     output_mapping=output
-        # )
+        indata = record(ch=2)
 
-        # trial_data[frequency] = indata
-        # all_data[frequency] += [indata]
+        trial_data[frequency] = indata[:, 1]
+        all_data[frequency] += [indata[:, 1]]
 
         func.write(":OUTPut1:STATe OFF")
         time.sleep(0.5)
 
-    # p_voltage[frequency] = all_data.mean()
+    p_voltage[frequency] = all_data.mean()
     time.sleep(0.5)
 
+    t = indata[:, 0]
 
-#Figure
-plt.subplot(211)
-# plt.plot(t, sig)
-plt.title("Trigger")
-plt.ylabel('Voltage (V)')
-plt.xlabel('Time (s)')
+    # Figure
+    plt.subplot(211)
+    plt.title('Signal')
+    plt.ylabel('Voltage (mV)')
+    for trial in trials:
+        plt.plot(t*1e6, all_data[frequency, trial]*1e3, label=(f'{frequency} kHz'))
 
-plt.subplot(212)
-for frequency in frequencies:
-    plt.plot(t, p_voltage[frequency], label=(f'{frequency} kHz'))
-plt.title('Recorded signal')
-plt.legend()
-plt.ylabel('Voltage (V)')
-plt.xlabel('Time (s)')
+    plt.subplot(212)
+    plt.plot(t*1e6, p_voltage[frequency]*1e3, label=(f'{frequency} kHz'))
+    plt.title('Mean signal')
+    plt.legend()
+    plt.ylabel('Voltage (mV)')
+    plt.xlabel('Time (\u03bcs)')
 
-plt.tight_layout()
-plt.show()
+    plt.tight_layout()
+    plt.savefig(f'data/{frequency}.png')
+
+    #csv
+    save_csv = np.c_[t, p_voltage[frequency]]
+    np.savetxt(f'data/{frequency}.csv', save_csv, delimiter=',')
+
 
 
 #Save
