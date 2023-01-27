@@ -1,33 +1,40 @@
 import pyvisa
-import argparse
-from PIL import Image
-import io
+import sys
+import numpy as np
+import matplotlib.pyplot as plt
 
+try:
+    rm = pyvisa.ResourceManager()
+    # print(rm.list_resources())
+    osci = rm.open_resource('USB0::0xF4EC::0xEE38::SDSMMEBQ4R4674::INSTR')
+except:
+    print('Failed to connect to oscilloscope...')
+    sys.exit(0)
+osci.timeout = 30000
 
-# argparser = argparse.ArgumentParser()
-# argparser.add_argument('-a', '--address', required=True, help='VISA address like "TCPIP::{ipaddress}::INSTR"')
-# argparser.add_argument('-o', '--output', help='Output file name (default: "screen.png")', default='screen.png')
-# args = argparser.parse_args()
+CHAN = 2
+SAMPLE_RATE = osci.query('SARA?')
+SAMPLE_RATE = SAMPLE_RATE[len('SARA '):-5]
+SAMPLE_RATE = float(SAMPLE_RATE)
+FS = 1e9
 
+# osci.write('*RST')
+# osci.write(':STOP')
+osci.write('WFSU SP, 1, NP, 0, FP, 0')
+osci.write('C2:WF? DAT2')
+# osci.chunk_size = 1024**3
 
-rm = pyvisa.ResourceManager()
+WAVEFORM = osci.query_binary_values('C2:WF? DAT2', datatype='i', is_big_endian=True)
+# WAVEFORM = osci.query_binary_values('C2:WF? DAT2')
 
-# inst = rm.open_resource(args.address)
+X = np.arange(0, len(WAVEFORM), 1)
+TIME = X/FS
+print(len(X))
+# osci.write('FLNM')
+# osci.write('ACQuire:STATE STOP')
 
-# print(rm.list_resources())
-
-inst = rm.open_resource('USB0::0xF4EC::0xEE38::SDSMMEBQ4R4674::INSTR')
-# print(inst.query('*IDN?'))
-
-# inst.write('*RST')
-inst.write(':STOP')
-inst.write('CSVS')
-# inst.write('FLNM')
-# inst.write('ACQuire:STATE STOP')
-
-# bmp_bin = inst.query_binary_values(':DISP:DATA?', datatype='B', container=bytes)
-# img = Image.open(io.BytesIO(bmp_bin))
-# img.save(args.output, args.output.split('.')[-1])
+plt.plot(TIME, WAVEFORM, color='black')
+plt.show()
 
 
 
