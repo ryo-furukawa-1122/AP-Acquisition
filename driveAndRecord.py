@@ -1,20 +1,22 @@
+# %%
 import pyvisa
 import time
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
-import csv
 
+# %%
 # Connection to instruments
 try:
     rm = pyvisa.ResourceManager()
     # resource_list = rm.list_resources()
-    func = rm.open_resource('USB0::-adress of multifunction generator-')
+    func = rm.open_resource('USB0::0x0D4A::0x000D::9338635::INSTR')
     osci = rm.open_resource('USB0::0xF4EC::0xEE38::SDSMMEBQ4R4674::INSTR')
 except:
     print('Failed to connect to instruments...')
     sys.exit(0)
 
+# %%
 def record(ch):
     fs = osci.query('SARA?')
     fs = fs[len('SARA '):-5]
@@ -28,7 +30,8 @@ def record(ch):
     voff = voff[len(f'C{ch}:OFST '):-2]
     voff = float(voff)
 
-    osci.write(':STOP')
+    # osci.write(':STOP')
+    osci.write('TRMD NORM')
     osci.write('WFSU SP, 1, NP, 0, FP, 0')
     osci.write(f'C{ch}:WF? DAT2')
     osci.chunk_size = 1024**3
@@ -42,41 +45,49 @@ def record(ch):
     x = np.arange(0, len(wave), 1)
     t = x/fs  # in s
 
-    return np._[t, v]
+    return np.c_[t, v]
 
-func.write(":SOURce1:BURst:STATe ON")  # Set at burst mode
+# %%
+# func.write(":SOURce1:BURst:STATe ON")  # Set at burst mode
+func.write(':SOURce1:CONTinuous:IMMediate')
 
-frequencies = np.arange(200, 900, 20)  # in kHz
+frequencies = np.arange(200, 900, 100)  # in kHz
 voltage_amp = 2  # AC 10 V
 
-func.write(f":SOURce1:VOLTage:LEVelIMMediate:AMPLitude {voltage_amp} VPP")
+func.write(f":SOURce1:VOLTage:LEVel:IMMediate:AMPLitude {voltage_amp} VPP")
 
-all_data = {int(f): [] for f in frequencies}
-p_voltage = {int(f): [] for f in frequencies}
+all_data = [[0] for i in range(len(frequencies))]
+p_voltage = [[0] for i in range(len(frequencies))]
+# print(all_data)
 
+# %%
 ch = 2  # Channel of the oscilloscope
-trials = 1
-for frequency in frequencies:
-    all_data[frequency] = {int(trial): [] for trial in trials}
+trials = 3
+for i in range (len(frequencies)):
+    all_data[i] = [0 for j in range(trials)]
 
-for frequency in frequencies:
-    print(f"Setting frequency to {frequency}")
-    func.write(f":SOURce1:FREQuency:FIXed {frequency}k")
+# %%
+count = 0
+for i in range(len(frequencies)):
+    print(f"Setting frequency to {frequencies[i]}")
+    func.write(f":SOURce1:FREQuency:FIXed {frequencies[i]}k")
 
-    for trial in trials:
-        func.write(":OUTPut1:*TRG")
-        func.write(':OUTPut1:STATe ')
-        trial_data = {}
+    for j in range(-1, trials):
+        if j == -1:
+            print('Start')
+        else:
+            print(f'Trial: {j+1}')
+            func.write(':OUTPut1:STATe ON')
+            func.write('*TRG')
+            # func.write(':SOURce1:BURSt:TRIGger:NCYCles 2000')  # 50 cycles
+            indata = record(ch=2)
+            func.write(":OUTPut1:STATe OFF")
+            
+            time.sleep(0.5)
+            all_data[i][j] = indata[:, 1]
 
-        indata = record(ch=2)
-
-        trial_data[frequency] = indata[:, 1]
-        all_data[frequency] += [indata[:, 1]]
-
-        func.write(":OUTPut1:STATe OFF")
-        time.sleep(0.5)
-
-    p_voltage[frequency] = all_data.mean()
+    all = np.array(all_data)
+    p_voltage[i] = all.mean(axis=1)[i]
     time.sleep(0.5)
 
     t = indata[:, 0]
@@ -85,26 +96,24 @@ for frequency in frequencies:
     plt.subplot(211)
     plt.title('Signal')
     plt.ylabel('Voltage (mV)')
-    for trial in trials:
-        plt.plot(t*1e6, all_data[frequency, trial]*1e3, label=(f'{frequency} kHz'))
+    for j in range(trials):
+        plt.plot(t*1e6, all[i, j]*1e3, label=(f'{frequencies[i]} kHz'), color='black', alpha=0.5)
 
     plt.subplot(212)
-    plt.plot(t*1e6, p_voltage[frequency]*1e3, label=(f'{frequency} kHz'))
+    plt.plot(t*1e6, p_voltage[i]*1e3, label=(f'{frequencies[i]} kHz'), color='black')
     plt.title('Mean signal')
     plt.legend()
     plt.ylabel('Voltage (mV)')
     plt.xlabel('Time (\u03bcs)')
 
-    plt.tight_layout()
-    plt.savefig(f'data/{frequency}.png')
+    # plt.tight_layout()
+    plt.legend().remove()
+    plt.show()
+    plt.savefig(f'data/{frequencies[i]}.png')
+    plt.close()
 
     #csv
-    save_csv = np.c_[t, p_voltage[frequency]]
-    np.savetxt(f'data/{frequency}.csv', save_csv, delimiter=',')
+    save_csv = np.c_[t, p_voltage[i]]
+    np.savetxt(f'data/{frequencies[i]}.csv', save_csv, delimiter=',')
 
-
-
-#Save
-# with open(f'data/{frequency}.csv', 'w', newline='') as file:
-#     writer = csv.writer(file)
-#     writer.writerow(t, trial_data)
+# %%

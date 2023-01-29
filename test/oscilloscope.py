@@ -21,6 +21,13 @@ fs = fs[len('SARA '):-5]
 fs = float(fs)
 print(fs)
 
+# fs = 20e6
+# osci.write(f'SARA, {fs}')
+
+# fsref = osci.query('SARA?')
+# fsref = fsref[len('SARA '):-5]
+# print(f'Setted at {fsref} Hz')
+
 vd = osci.query('C2:VDIV?')
 vd = vd[len('C2:VDIV '):-2]
 vd = float(vd)
@@ -49,6 +56,7 @@ wave = np.array(wave)
 v = wave * (vd / 25) - voff
 
 x = np.arange(0, len(wave), 1)
+print(len(x))
 t = x/fs
 
 #csv
