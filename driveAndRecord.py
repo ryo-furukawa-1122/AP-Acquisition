@@ -67,7 +67,6 @@ for i in range (len(frequencies)):
     all_data[i] = [0 for j in range(trials)]
 
 # %%
-count = 0
 for i in range(len(frequencies)):
     print(f"Setting frequency to {frequencies[i]}")
     func.write(f":SOURce1:FREQuency:FIXed {frequencies[i]}k")
@@ -96,6 +95,9 @@ for i in range(len(frequencies)):
     plt.subplot(211)
     plt.title('Signal')
     plt.ylabel('Voltage (mV)')
+    plt.gca().spines['right'].set_visible(False)
+    plt.gca().spines['top'].set_visible(False)
+    plt.tick_params(labelbottom=False, labelleft=True, labelright=False, labeltop=False)
     for j in range(trials):
         plt.plot(t*1e6, all[i, j]*1e3, label=(f'{frequencies[i]} kHz'), color='black', alpha=0.5)
 
@@ -105,6 +107,8 @@ for i in range(len(frequencies)):
     plt.legend()
     plt.ylabel('Voltage (mV)')
     plt.xlabel('Time (\u03bcs)')
+    plt.gca().spines['right'].set_visible(False)
+    plt.gca().spines['top'].set_visible(False)
 
     # plt.tight_layout()
     plt.legend().remove()
