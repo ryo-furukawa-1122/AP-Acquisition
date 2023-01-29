@@ -5,6 +5,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
+plt.rcParams['font.family'] = 'Arial'
+plt.rcParams['font.size'] = '14'
+plt.rcParams['figure.subplot.bottom'] = '0.15'
+plt.rcParams['figure.subplot.left'] = '0.2'
+
 # %%
 # Connection to instruments
 try:
@@ -62,7 +67,7 @@ p_voltage = [[0] for i in range(len(frequencies))]
 
 # %%
 ch = 2  # Channel of the oscilloscope
-trials = 3
+trials = 5
 for i in range (len(frequencies)):
     all_data[i] = [0 for j in range(trials)]
 
@@ -82,7 +87,7 @@ for i in range(len(frequencies)):
             indata = record(ch=2)
             func.write(":OUTPut1:STATe OFF")
             
-            time.sleep(0.5)
+            time.sleep(1)
             all_data[i][j] = indata[:, 1]
 
     all = np.array(all_data)
@@ -99,7 +104,7 @@ for i in range(len(frequencies)):
     plt.gca().spines['top'].set_visible(False)
     plt.tick_params(labelbottom=False, labelleft=True, labelright=False, labeltop=False)
     for j in range(trials):
-        plt.plot(t*1e6, all[i, j]*1e3, label=(f'{frequencies[i]} kHz'), color='black', alpha=0.5)
+        plt.plot(t*1e6, all[i, j]*1e3, label=(f'{frequencies[i]} kHz'), color='black', alpha=0.25)
 
     plt.subplot(212)
     plt.plot(t*1e6, p_voltage[i]*1e3, label=(f'{frequencies[i]} kHz'), color='black')
@@ -111,8 +116,9 @@ for i in range(len(frequencies)):
     plt.gca().spines['top'].set_visible(False)
 
     # plt.tight_layout()
+    plt.subplots_adjust(hspace=0.4)
     plt.legend().remove()
-    plt.show()
+    # plt.show()
     plt.savefig(f'data/{frequencies[i]}.png')
     plt.close()
 
