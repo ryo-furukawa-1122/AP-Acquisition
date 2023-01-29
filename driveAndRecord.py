@@ -56,8 +56,8 @@ def record(ch):
 # func.write(":SOURce1:BURst:STATe ON")  # Set at burst mode
 func.write(':SOURce1:CONTinuous:IMMediate')
 
-frequencies = np.arange(200, 900, 100)  # in kHz
-voltage_amp = 2  # AC 10 V
+frequencies = np.arange(200, 900, 20)  # in kHz
+voltage_amp = 20e-3  # AC 10 V
 
 func.write(f":SOURce1:VOLTage:LEVel:IMMediate:AMPLitude {voltage_amp} VPP")
 
