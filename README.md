@@ -1,7 +1,7 @@
 # AP-Acquisition
 
 ## Overview
-This program drives a multifunction generator with different frequencies and records signals with an oscilloscope (developing...)
+This program drives a multifunction generator with different frequencies and records signals with an oscilloscope.
 
 ## Materials
 * Python
