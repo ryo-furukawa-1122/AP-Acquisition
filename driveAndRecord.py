@@ -35,7 +35,6 @@ def record(ch):
     voff = voff[len(f'C{ch}:OFST '):-2]
     voff = float(voff)
 
-    # osci.write(':STOP')
     osci.write('TRMD NORM')
     osci.write('WFSU SP, 1, NP, 0, FP, 0')
     osci.write(f'C{ch}:WF? DAT2')
@@ -53,17 +52,16 @@ def record(ch):
     return np.c_[t, v]
 
 # %%
-# func.write(":SOURce1:BURst:STATe ON")  # Set at burst mode
 func.write(':SOURce1:CONTinuous:IMMediate')
 
 frequencies = np.arange(200, 900, 20)  # in kHz
-voltage_amp = 20e-3  # AC 10 V
+voltage_amp = 20e-3
 
 func.write(f":SOURce1:VOLTage:LEVel:IMMediate:AMPLitude {voltage_amp} VPP")
+func.write(":SOURce1:FUNCtion:SHAPe SINusoid")
 
 all_data = [[0] for i in range(len(frequencies))]
 p_voltage = [[0] for i in range(len(frequencies))]
-# print(all_data)
 
 # %%
 ch = 2  # Channel of the oscilloscope
@@ -83,7 +81,6 @@ for i in range(len(frequencies)):
             print(f'Trial: {j+1}')
             func.write(':OUTPut1:STATe ON')
             func.write('*TRG')
-            # func.write(':SOURce1:BURSt:TRIGger:NCYCles 2000')  # 50 cycles
             indata = record(ch=2)
             func.write(":OUTPut1:STATe OFF")
             
@@ -115,7 +112,6 @@ for i in range(len(frequencies)):
     plt.gca().spines['right'].set_visible(False)
     plt.gca().spines['top'].set_visible(False)
 
-    # plt.tight_layout()
     plt.subplots_adjust(hspace=0.4)
     plt.legend().remove()
     # plt.show()
