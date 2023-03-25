@@ -93,6 +93,12 @@ for i in range(len(frequencies)):
 
     t = indata[:, 0]
 
+    p_all = p_voltage[0]
+    t_all = t
+    for j in range(trials-1):
+        p_all = np.concatenate([p_all, p_voltage[j+1]])
+        t_all = np.concatenate([t_all, t])
+
     # Figure
     plt.subplot(211)
     plt.title('Signal')
@@ -119,7 +125,7 @@ for i in range(len(frequencies)):
     plt.close()
 
     #csv
-    save_csv = np.c_[t, p_voltage[i]]
+    save_csv = np.c_[t_all, p_all]
     np.savetxt(f'data/{frequencies[i]}.csv', save_csv, delimiter=',')
 
 # %%
