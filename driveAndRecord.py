@@ -15,6 +15,7 @@ plt.rcParams['figure.subplot.left'] = '0.2'
 try:
     rm = pyvisa.ResourceManager()
     # resource_list = rm.list_resources()
+    # print(resource_list)
     func = rm.open_resource('USB0::0x0D4A::0x000D::9338635::INSTR')
     osci = rm.open_resource('USB0::0xF4EC::0xEE38::SDSMMEBQ4R4674::INSTR')
 except:
@@ -93,11 +94,12 @@ for i in range(len(frequencies)):
 
     t = indata[:, 0]
 
-    p_all = p_voltage[0]
-    t_all = t
+    p_all = all[i, 0]
+    t_arr = np.array(t)
+    t_all = t_arr
     for j in range(trials-1):
-        p_all = np.concatenate([p_all, p_voltage[j+1]])
-        t_all = np.concatenate([t_all, t])
+        p_all = np.concatenate([p_all, all[i, j+1]])
+        t_all = np.concatenate([t_all, t_arr])
 
     # Figure
     plt.subplot(211)
