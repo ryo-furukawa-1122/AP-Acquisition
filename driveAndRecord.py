@@ -55,8 +55,13 @@ def record(ch):
 # %%
 func.write(':SOURce1:CONTinuous:IMMediate')
 
+# Frequency characteristic
 frequencies = np.arange(260, 920, 20)  # in kHz
 voltage_amp = 20
+
+# Voltage characteristic
+# frequencies = [520]
+# voltage_amp = 0.2
 
 func.write(f":SOURce1:VOLTage:LEVel:IMMediate:AMPLitude {voltage_amp} VPP")
 func.write(":SOURce1:FUNCtion:SHAPe SINusoid")
@@ -124,10 +129,12 @@ for i in range(len(frequencies)):
     plt.legend().remove()
     # plt.show()
     plt.savefig(f'data/{frequencies[i]}.png')
+    # plt.savefig(f'data/{voltage_amp * 100 / 2}.png')
     plt.close()
 
     #csv
     save_csv = np.c_[t_all, p_all]
     np.savetxt(f'data/{frequencies[i]}.csv', save_csv, delimiter=',')
+    # np.savetxt(f'data/{voltage_amp * 100 / 2}.csv', save_csv, delimiter=',')
 
 # %%
