@@ -55,7 +55,7 @@ def record(ch):
 # %%
 func.write(':SOURce1:CONTinuous:IMMediate')
 
-frequencies = np.arange(200, 920, 20)  # in kHz
+frequencies = np.arange(260, 920, 20)  # in kHz
 voltage_amp = 20
 
 func.write(f":SOURce1:VOLTage:LEVel:IMMediate:AMPLitude {voltage_amp} VPP")
