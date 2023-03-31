@@ -61,7 +61,7 @@ func.write(':SOURce1:CONTinuous:IMMediate')
 
 # Voltage characteristic
 frequencies = [520]
-voltage_amp = 0.6
+voltage_amp = 1.6  # Vpp
 
 func.write(f":SOURce1:VOLTage:LEVel:IMMediate:AMPLitude {voltage_amp} VPP")
 func.write(":SOURce1:FUNCtion:SHAPe SINusoid")
