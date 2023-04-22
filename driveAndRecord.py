@@ -93,17 +93,19 @@ for i in range(len(frequencies)):
             time.sleep(1)
             all_data[i][j] = indata[:, 1]
 
-    all = np.array(all_data)
-    p_voltage[i] = all.mean(axis=1)[i]
+    # all = np.array(all_data)
+    all = np.array(all_data[i])
+    # p_voltage[i] = all.mean(axis=1)[i]
+    p_voltage[i] = all.mean(axis=0)
     time.sleep(0.5)
 
     t = indata[:, 0]
 
-    p_all = all[i, 0]
+    p_all = all[0, :]
     t_arr = np.array(t)
     t_all = t_arr
     for j in range(trials-1):
-        p_all = np.concatenate([p_all, all[i, j+1]])
+        p_all = np.concatenate([p_all, all[j+1, :]])
         t_all = np.concatenate([t_all, t_arr])
 
     # Figure
@@ -114,7 +116,7 @@ for i in range(len(frequencies)):
     plt.gca().spines['top'].set_visible(False)
     plt.tick_params(labelbottom=False, labelleft=True, labelright=False, labeltop=False)
     for j in range(trials):
-        plt.plot(t*1e6, all[i, j]*1e3, label=(f'{frequencies[i]} kHz'), color='black', alpha=0.25)
+        plt.plot(t*1e6, all[j, :]*1e3, label=(f'{frequencies[i]} kHz'), color='black', alpha=0.25)
 
     plt.subplot(212)
     plt.plot(t*1e6, p_voltage[i]*1e3, label=(f'{frequencies[i]} kHz'), color='black')
