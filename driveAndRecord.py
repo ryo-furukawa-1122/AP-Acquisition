@@ -56,12 +56,12 @@ def record(ch):
 func.write(':SOURce1:CONTinuous:IMMediate')
 
 # Frequency characteristic
-frequencies = np.arange(260, 920, 20)  # in kHz
-voltage_amp = 20
+# frequencies = np.arange(260, 920, 20)  # in kHz
+# voltage_amp = 20
 
 # Voltage characteristic
-# frequencies = [900]
-# voltage_amp = 1.6  # Vpp
+frequencies = [300]
+voltage_amp = 0.2  # Vpp
 
 func.write(f":SOURce1:VOLTage:LEVel:IMMediate:AMPLitude {voltage_amp} VPP")
 func.write(":SOURce1:FUNCtion:SHAPe SINusoid")
@@ -93,9 +93,7 @@ for i in range(len(frequencies)):
             time.sleep(1)
             all_data[i][j] = indata[:, 1]
 
-    # all = np.array(all_data)
     all = np.array(all_data[i])
-    # p_voltage[i] = all.mean(axis=1)[i]
     p_voltage[i] = all.mean(axis=0)
     time.sleep(0.5)
 
@@ -129,13 +127,13 @@ for i in range(len(frequencies)):
 
     plt.subplots_adjust(hspace=0.4)
     plt.legend().remove()
-    plt.savefig(f'data/{frequencies[i]}.png')
-    # plt.savefig(f'data/{int(voltage_amp * 100 / 2)}.png')
+    # plt.savefig(f'data/{frequencies[i]}.png')
+    plt.savefig(f'data/{int(voltage_amp * 100 / 2)}.png')
     plt.close()
 
     #csv
     save_csv = np.c_[t_all, p_all]
-    np.savetxt(f'data/{frequencies[i]}.csv', save_csv, delimiter=',')
-    # np.savetxt(f'data/{int(voltage_amp * 100 / 2)}.csv', save_csv, delimiter=',')
+    # np.savetxt(f'data/{frequencies[i]}.csv', save_csv, delimiter=',')
+    np.savetxt(f'data/{int(voltage_amp * 100 / 2)}.csv', save_csv, delimiter=',')
 
 # %%
