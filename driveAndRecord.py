@@ -16,7 +16,8 @@ try:
     rm = pyvisa.ResourceManager()
     # resource_list = rm.list_resources()
     # print(resource_list)
-    func = rm.open_resource('USB0::0x0D4A::0x000D::9338635::INSTR')
+    func = rm.open_resource('USB0::0x0D4A::0x000D::9201982::INSTR')
+    # func = rm.open_resource('USB0::0x0D4A::0x000D::9338635::INSTR')
     osci = rm.open_resource('USB0::0xF4EC::0xEE38::SDSMMEBQ4R4674::INSTR')
 except:
     print('Failed to connect to instruments...')
