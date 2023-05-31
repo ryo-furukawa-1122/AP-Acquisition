@@ -22,7 +22,7 @@ def gate(i: int):
     start = i * chunk_dur
     end = start + chunk_dur
     t = np.arange(start, end, 1/fs)  # 1チャンク分の
-    wav = (signal.square(2*np.pi*(3)*x)+1)/2
+    wav = (signal.square(2*np.pi*(3)*t)+1)/2
     return wav
 
 with ni.Task() as task:
@@ -34,7 +34,7 @@ with ni.Task() as task:
     task.out_stream.output_buf_size = chunk_size * 2 # バッファサイズをチャンク数の2倍に
     task.out_stream.regen_mode = constants.RegenerationMode.DONT_ALLOW_REGENERATION # 波形の再生成を禁止
     for i_chunk in range(n_chunk):
-        chunk = get_wav_chunk(i_chunk)
+        chunk = gate(i_chunk)
         task.write(chunk, auto_start=True)  # 波形出力
     task.wait_until_done()              # 待機
     task.stop()                         # 終了
