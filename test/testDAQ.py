@@ -1,6 +1,5 @@
 import numpy as np
 import nidaqmx as ni
-from nidaqmx import constants
 from scipy import signal
 
 fs = 100e3
